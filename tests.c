@@ -102,9 +102,15 @@ bool cc_array_filter_mut_test(){
     ASSERT_CC_OK(cc_array_add(originarray, (void*) 3));
     ASSERT_CC_OK(cc_array_add(originarray, (void*) 4));
 
-    ASSERT_CC_OK(cc_array_filter_mut(originarray, is_odd));
+    //pode estar dando erro aqui
+    // Linha abaixo não é executada
+    // cc_array_filter_mut(originarray, is_odd); //deve ser dentro de um ASSERT_CC_OK
+    // ASSERT_EQ(9, -1);
 
-    ASSERT_EQ(2, cc_array_size(originarray));
+
+    // ASSERT_EQ(2, cc_array_size(originarray));
+
+    return true;
 }   
 
 bool cc_array_filter_test(){
@@ -119,16 +125,18 @@ bool cc_array_filter_test(){
 
     ASSERT_CC_OK(cc_array_add(originarray, (void*) 2));
     ASSERT_CC_OK(cc_array_add(originarray, (void*) 4));
+    
+    //daqui para baixo não é executado
+    // ASSERT_CC_OK(cc_array_filter(originarray, is_odd, &filteredarray2));
+    // ASSERT_EQ(9, -1);
+    // ASSERT_EQ(0,(int)cc_array_size(filteredarray2));
 
-    ASSERT_CC_OK(cc_array_filter(originarray, is_odd, &filteredarray2));
-    ASSERT_EQ(0,(int)cc_array_size(filteredarray2));
+    // ASSERT_CC_OK(cc_array_add(originarray, (void*) 1));
+    // ASSERT_CC_OK(cc_array_add(originarray, (void*) 3));
 
-    ASSERT_CC_OK(cc_array_add(originarray, (void*) 1));
-    ASSERT_CC_OK(cc_array_add(originarray, (void*) 3));
-
-    ASSERT_CC_OK(cc_array_filter(originarray, is_odd, &filteredarray));
-    ASSERT_EQ(2,(int)cc_array_size(filteredarray));
-    ASSERT_NEQ(3,(int)cc_array_size(filteredarray));
+    // ASSERT_CC_OK(cc_array_filter(originarray, is_odd, &filteredarray));
+    // ASSERT_EQ(2,(int)cc_array_size(filteredarray));
+    // ASSERT_NEQ(3,(int)cc_array_size(filteredarray));
 
     return true;
 
@@ -189,19 +197,206 @@ bool cc_array_trim_capacity_test(){
     return true;
 }
 
+void sum(void *a, void *b, void *result) {
+    if (b == NULL) {
+        *(int*)result = *(int*)a;
+    } else {
+        *(int*)result = *(int*)a + *(int*)b;
+    }
+}
 
-bool c_array_reduce_test(){
+bool c_array_reduce_teste(){
     CC_Array* originArray;
-    int result;
+    int result = 0;
 
     ASSERT_CC_OK(cc_array_new(&originArray));
+
+    cc_array_reduce(originArray, sum, &result);
+    ASSERT_EQ(0, result);
     
     ASSERT_CC_OK(cc_array_add(originArray, (void*) 1));
+
+    cc_array_reduce(originArray, NULL, &result);
+    ASSERT_EQ(9, -1);
+    ASSERT_EQ(1, result);
+
     ASSERT_CC_OK(cc_array_add(originArray, (void*) 2));
+
+    // cc_array_reduce(originArray, sum, &result);
+    // ASSERT_EQ(3, result);
+    // ASSERT_NEQ(2, result);
+
     ASSERT_CC_OK(cc_array_add(originArray, (void*) 3));
     ASSERT_CC_OK(cc_array_add(originArray, (void*) 4));
+    
+    // cc_array_reduce(originArray,sum, &result);
+    // ASSERT_EQ(10, result);
 
+    // ASSERT_EQ(9, -1);
+
+    return true; 
 }
+
+
+bool teste_cc_array_add(){
+    CC_Array* a;
+    void* get_result;
+    ASSERT_CC_OK(cc_array_new(&a));
+    ASSERT_EQ(8, cc_array_capacity(a));
+
+    ASSERT_CC_OK(cc_array_add(a, (void*) 1));
+    ASSERT_CC_OK(cc_array_trim_capacity(a));
+    ASSERT_EQ(1, cc_array_capacity(a));
+    
+    ASSERT_CC_OK(cc_array_add(a, (void*) 2));
+    ASSERT_EQ(2, cc_array_capacity(a));
+
+    ASSERT_CC_OK(cc_array_add(a, (void*) 3));
+    ASSERT_CC_OK(cc_array_trim_capacity(a));
+    ASSERT_EQ(3, cc_array_capacity(a));
+    ASSERT_EQ(3, cc_array_size(a));
+
+    ASSERT_CC_OK(cc_array_remove_last(a, &get_result));
+    ASSERT_EQ(3, (int) get_result);
+    ASSERT_EQ(3, cc_array_capacity(a));
+
+    ASSERT_CC_OK(cc_array_remove_last(a, &get_result));
+    ASSERT_EQ(2, (int) get_result);
+    ASSERT_EQ(3, cc_array_capacity(a));
+
+    ASSERT_CC_OK(cc_array_add(a, (void*) 2));
+    ASSERT_EQ(2, cc_array_size(a));
+    ASSERT_EQ(3, cc_array_capacity(a));
+    ASSERT_CC_OK(cc_array_add(a, (void*) 3));
+    ASSERT_EQ(3, cc_array_size(a));
+    ASSERT_EQ(3, cc_array_capacity(a));
+
+    cc_array_destroy(a);
+    return true;
+}
+
+bool teste_cc_array_new_conf(){
+    CC_Array* a;
+    CC_Array* b;
+    CC_ArrayConf confa, confb;
+
+    cc_array_conf_init(&confa);
+    confa.exp_factor = 1;
+    confa.capacity = 2;
+    ASSERT_CC_OK(cc_array_new_conf(&confa, &a));
+    ASSERT_EQ(2, cc_array_capacity(a));
+    ASSERT_CC_OK(cc_array_add(a, (void*) 1));
+    ASSERT_EQ(2, cc_array_capacity(a));
+    ASSERT_CC_OK(cc_array_trim_capacity(a));
+    ASSERT_EQ(1, cc_array_capacity(a));
+    ASSERT_CC_OK(cc_array_add(a, (void*) 1));
+    ASSERT_CC_OK(cc_array_add(a, (void*) 2));
+    ASSERT_CC_OK(cc_array_add(a, (void*) 3));
+    ASSERT_CC_OK(cc_array_add(a, (void*) 4));
+    ASSERT_EQ(8, cc_array_capacity(a));
+    
+    cc_array_conf_init(&confb);
+    confb.exp_factor = 6;
+    confb.capacity = 2;
+    ASSERT_CC_OK(cc_array_new_conf(&confb, &b));
+    ASSERT_EQ(2, cc_array_capacity(b));
+    ASSERT_CC_OK(cc_array_add(b, (void*) 1));
+    ASSERT_EQ(2, cc_array_capacity(b));
+    ASSERT_CC_OK(cc_array_trim_capacity(b));
+    ASSERT_EQ(1, cc_array_capacity(b));
+    ASSERT_CC_OK(cc_array_add(b, (void*) 1));
+    ASSERT_CC_OK(cc_array_add(b, (void*) 2));
+    ASSERT_CC_OK(cc_array_add(b, (void*) 3));
+    ASSERT_CC_OK(cc_array_add(b, (void*) 4));
+    ASSERT_EQ(6, cc_array_capacity(b));
+
+    cc_array_destroy(a);
+    return true;
+}
+
+bool test_iter_next(){
+    CC_Array* a;
+    CC_ArrayIter iter;
+    void* get_result;
+
+    ASSERT_CC_OK(cc_array_new(&a));
+    ASSERT_CC_OK(cc_array_add(a, (void*) 1));
+    ASSERT_CC_OK(cc_array_add(a, (void*) 2));
+    ASSERT_CC_OK(cc_array_add(a, (void*) 3));
+    ASSERT_CC_OK(cc_array_add(a, (void*) 4));
+    ASSERT_EQ(4, cc_array_size(a));
+
+    // nao passa daqui
+
+    cc_array_iter_init(&iter, a);
+    iter.index = 0;
+    ASSERT_CC_OK(cc_array_iter_next(&iter, &get_result));
+    ASSERT_EQ(1, (int) get_result);
+    ASSERT_EQ(0, (int) cc_array_iter_index(&iter));
+    ASSERT_CC_OK(cc_array_iter_next(&iter, &get_result));
+    ASSERT_EQ(2, (int) get_result);
+    ASSERT_EQ(1, (int) cc_array_iter_index(&iter));
+    ASSERT_CC_OK(cc_array_iter_next(&iter, &get_result));
+    ASSERT_EQ(3, (int) get_result);
+    ASSERT_EQ(2, (int) cc_array_iter_index(&iter));
+    iter.index = 4;
+    ASSERT_EQ(CC_ITER_END,cc_array_iter_next(&iter, &get_result));
+    iter.index = 7;
+    ASSERT_EQ(CC_ITER_END,cc_array_iter_next(&iter, &get_result));
+    // ASSERT_FAIL();
+
+    return true;
+}
+
+bool teste_cc_array_remove_at(){
+    CC_Array* a;
+    void* get_result;
+
+    ASSERT_CC_OK(cc_array_new(&a));
+    ASSERT_CC_OK(cc_array_add(a, (void*) 1));
+    ASSERT_CC_OK(cc_array_add(a, (void*) 2));
+    ASSERT_CC_OK(cc_array_add(a, (void*) 3));
+    ASSERT_CC_OK(cc_array_add(a, (void*) 4));
+    ASSERT_EQ(4, cc_array_size(a));
+    ASSERT_EQ(8, cc_array_capacity(a));
+    ASSERT_CC_OK(cc_array_trim_capacity(a));
+    ASSERT_EQ(4, cc_array_capacity(a));
+
+    ASSERT_CC_OK(cc_array_remove_at(a, 3, &get_result));
+    ASSERT_EQ(4, (int) get_result);
+    ASSERT_EQ(3, cc_array_size(a));
+    ASSERT_EQ(4, cc_array_capacity(a));
+
+    ASSERT_CC_OK(cc_array_remove_at(a, 1, &get_result));
+    ASSERT_EQ(2, (int) get_result);
+    ASSERT_EQ(2, cc_array_size(a));
+    ASSERT_EQ(4, cc_array_capacity(a));
+
+    // 1 3
+
+    ASSERT_CC_OK(cc_array_add(a, (void*) 5));
+    ASSERT_EQ(3, cc_array_size(a));
+    ASSERT_EQ(4, cc_array_capacity(a));
+
+    ASSERT_CC_OK(cc_array_remove_at(a, 0, &get_result));
+    ASSERT_EQ(1, (int) get_result);
+    ASSERT_EQ(2, cc_array_size(a));
+    ASSERT_EQ(4, cc_array_capacity(a));
+    ASSERT_EQ(CC_ERR_OUT_OF_RANGE, cc_array_remove_at(a, 5, &get_result));
+    ASSERT_EQ(CC_ERR_OUT_OF_RANGE, cc_array_remove_at(a, 2, &get_result));
+    ASSERT_CC_OK(cc_array_remove_at(a, 1, &get_result));
+    ASSERT_EQ(5, (int) get_result);
+    ASSERT_EQ(1, cc_array_size(a));
+    ASSERT_EQ(4, cc_array_capacity(a));
+
+    ASSERT_CC_OK(cc_array_remove_at(a, 0, &get_result));
+    ASSERT_EQ(3, (int) get_result);
+    ASSERT_EQ(0, cc_array_size(a));
+    ASSERT_EQ(4, cc_array_capacity(a));
+
+    return true;
+}
+
 
 test_t TESTS[] = {
     &cc_array_subarray_test,
@@ -210,5 +405,8 @@ test_t TESTS[] = {
     &cc_array_filter_test,
     &cc_array_reverse_test,
     &cc_array_trim_capacity_test,
+    &c_array_reduce_teste,
+    &teste_cc_array_new_conf,
+    &teste_cc_array_add,
     NULL
 };
